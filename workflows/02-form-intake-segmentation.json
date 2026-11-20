@@ -1,0 +1,1187 @@
+{
+  "name": "Lead qualification · Form intake → CRM, Sheets, Telegram, Klaviyo segment",
+  "description": "Website form webhook: lead to Zoho, Sheets and Telegram; AI rates it hot/warm/cold; contact goes to the matching Klaviyo list and the status is written back to Zoho.",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-form",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -512,
+        192
+      ],
+      "id": "ef5a96f1-dd13-456c-ad25-13e16eb73ffd",
+      "name": "Webhook",
+      "webhookId": "868cecef-26e3-4773-b632-bdee125ed7a8"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_LEADS_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Лист1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Позначка часу": "={{ $now.toISO() }}",
+            "Імя": "={{ $json[\"Імя\"] }}",
+            "Телефон": "={{ $json[\"Телефон\"] }}",
+            "Пошта": "={{ $json[\"Пошта\"] }}",
+            "Коментар": "={{ $json[\"Коментар\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Позначка часу",
+              "displayName": "Позначка часу",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Імя",
+              "displayName": "Імя",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Телефон",
+              "displayName": "Телефон",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Пошта",
+              "displayName": "Пошта",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Коментар",
+              "displayName": "Коментар",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        0,
+        0
+      ],
+      "id": "268b26bd-0ea9-41d9-80af-1b8f524d238f",
+      "name": "Sheets: log lead",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=📩 <b>Нова заявка з сайту</b>\n👤 <b>Ім'я:</b> {{ $json[\"Імя\"] }} \n📞 <b>Телефон:</b> {{ $json[\"Телефон\"] }}\n📧 <b>Email:</b> {{ $json[\"Пошта\"] }}\n💬 <b>Коментар:</b> {{ $json[\"Коментар\"] }}\n🕒 <b>Дата:</b> {{ $now.toFormat(\"dd.MM.yyyy HH:mm\") }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        384
+      ],
+      "id": "ccca324f-e9bf-40c2-a086-7fbdbfe350ea",
+      "name": "Telegram: new lead",
+      "webhookId": "06342ac1-470c-4634-ba79-ff8219f0ed1a",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "Company": "-",
+        "lastName": "={{ $json[\"Імя\"] }}",
+        "additionalFields": {
+          "Description": "={{ $json[\"Коментар\"] }}",
+          "Email": "={{ $json[\"Пошта\"] }}",
+          "First_Name": "={{ $json[\"Імя\"] }}",
+          "Phone": "={{ $json[\"Телефон\"] }}"
+        }
+      },
+      "type": "n8n-nodes-base.zohoCrm",
+      "typeVersion": 1,
+      "position": [
+        0,
+        192
+      ],
+      "id": "28ebbafa-5a12-43c6-88c0-f19e723c855c",
+      "name": "Zoho: create lead"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=[Prompt not published. To get the full workflow, see README → Get the full workflow.]",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -64,
+        688
+      ],
+      "id": "d59d56bb-a05c-4eae-a020-efa7ab8a2990",
+      "name": "AI: rate lead"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Отримуємо текстову відповідь AI\nlet aiResponse = $input.first().json.text;\n\n// Прибираємо markdown-обгортку ```json ... ```\naiResponse = aiResponse\n  .replace(/^```json\\s*/i, '')\n  .replace(/^```\\s*/i, '')\n  .replace(/```\\s*$/i, '')\n  .trim();\n\n// Перетворюємо текст у JSON\nconst result = JSON.parse(aiResponse);\n\n// Повертаємо як звичайний JSON-об'єкт\nreturn [\n  {\n    json: result\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        688
+      ],
+      "id": "a870cdb1-573c-471b-a61f-8707764698d0",
+      "name": "Parse AI rating"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dee331ef-c400-4c13-b518-d46c33104046",
+              "leftValue": "={{ $json.lead_status }}",
+              "rightValue": "hot",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "e9b2b5b2-cb72-4621-86b5-94edf52e0a58",
+              "leftValue": "={{ $json.lead_status }}",
+              "rightValue": "warm",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "8b52203d-3e98-4ebe-bdc6-16114b74ce1c",
+              "leftValue": "={{ $json.lead_status }}",
+              "rightValue": "cold",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        512,
+        688
+      ],
+      "id": "b80fc88f-daa4-4188-ab8c-1d1900d2e2e2",
+      "name": "Rating valid?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dd7ed989-ec07-4000-a09b-8f551ddacf2b",
+              "name": "lead_status",
+              "value": "warm",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        736,
+        608
+      ],
+      "id": "13631a82-a0c9-46da-bf9b-d8bc699d5276",
+      "name": "Fallback: warm"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.lead_status }}",
+                    "rightValue": "hot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "777d848d-d1c0-475b-b2b4-aef0c9cc2cc6"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "hot"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d332d963-5f2e-4be0-83a3-fdad6c5ba1ed",
+                    "leftValue": "={{ $json.lead_status }}",
+                    "rightValue": "cold",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cold"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b814109d-181a-4da6-b4a6-45ba52aa791f",
+                    "leftValue": "={{ $json.lead_status }}",
+                    "rightValue": "warm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "warm"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        960,
+        672
+      ],
+      "id": "104cdf75-6ee0-4412-a44f-5ffebe83abd1",
+      "name": "Route by rating"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "46d7e796-0375-48ac-aa32-3ee94a3976be",
+              "name": "id_status",
+              "value": "YOUR_KLAVIYO_LIST_ID_HOT",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1184,
+        400
+      ],
+      "id": "9677385b-2707-40ea-b3c5-933ccd717b24",
+      "name": "Klaviyo list: hot"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "46d7e796-0375-48ac-aa32-3ee94a3976be",
+              "name": "id_status",
+              "value": "YOUR_KLAVIYO_LIST_ID_COLD",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1184,
+        592
+      ],
+      "id": "11d94f7b-c02c-4bd2-a455-461ca5e6cb27",
+      "name": "Klaviyo list: cold"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "46d7e796-0375-48ac-aa32-3ee94a3976be",
+              "name": "id_status",
+              "value": "YOUR_KLAVIYO_LIST_ID_WARM",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1184,
+        784
+      ],
+      "id": "5f585e58-255e-403a-9625-61732d78f9ff",
+      "name": "Klaviyo list: warm"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"Імя\": \"{{\n$json.body.data.submissions.find(\n  s => s.label.trim() === 'Name'\n)?.value\n}}\",\n  \"Телефон\": \"{{\n'+' + String(\n  $json.body.data.submissions.find(\n    s => s.label.trim() === 'Phone number'\n  )?.value || ''\n).replace(/\\D/g, '')\n}}\",\n  \"Пошта\": \"{{\n$json.body.data.submissions.find(\n  s => s.label.trim() === 'Email'\n)?.value\n}}\",\n  \"Коментар\": \"{{\n$json.body.data.submissions.find(\n  s => s.label.trim() === 'Write a message'\n)?.value\n}}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -288,
+        192
+      ],
+      "id": "815c29e7-155b-4c1e-9e89-c0970134b046",
+      "name": "Parse form fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "58ae0740-026a-4dbb-b53a-3f3bb6e54a48",
+              "name": "id_profile",
+              "value": "={{JSON.parse($json.data).data.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2080,
+        592
+      ],
+      "id": "336a6501-0ee5-4758-abd2-9364a16d6a9b",
+      "name": "Get profile ID"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e8122b73-8e1c-428e-8b88-3f841d740d58",
+              "name": "id_status",
+              "value": "={{ $json.id_status }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1408,
+        592
+      ],
+      "id": "a878ca74-7fac-475c-b445-784cfb2051ba",
+      "name": "Selected list"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://a.klaviyo.com/api/lists/{{ $('Selected list').item.json.id_status }}/relationships/profiles ",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Revision",
+              "value": "2026-07-15"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": [\n    {\n      \"type\": \"profile\",\n      \"id\":\"{{ $json.id_profile }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2304,
+        592
+      ],
+      "id": "8f792a14-62e7-4f86-9396-7593a0f5997b",
+      "name": "Klaviyo: add to list"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        896
+      ],
+      "id": "5a0b62c8-116d-41bb-b01e-ff6e5e880827",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://a.klaviyo.com/api/profiles",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Revision",
+              "value": "2026-07-15.pre"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"data\": {\n    \"type\": \"profile\",\n    \"attributes\": {\n      \"email\": \"{{ $('Parse form fields').item.json['Пошта'] }}\",\n      \"phone_number\": \"{{ $('Parse form fields').item.json['Телефон'] }}\",\n      \"first_name\": \"{{ $('Parse form fields').item.json['Імя'] }}\",\n      \"properties\": {\n        \"Comment\": \"{{ $('Parse form fields').item.json['Коментар'] }}\"\n      }\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1856,
+        592
+      ],
+      "id": "4a597a7c-36ea-4753-b243-448fa68e9047",
+      "name": "Klaviyo: create profile"
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "operation": "getAll",
+        "limit": 2,
+        "options": {
+          "fields": [
+            "Created_Time",
+            "Email"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.zohoCrm",
+      "typeVersion": 1,
+      "position": [
+        224,
+        192
+      ],
+      "id": "fdd282af-7183-4915-aacb-5212d518161e",
+      "name": "Zoho: get leads"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "719eba1a-00c6-4359-a95a-759dff54a882",
+              "leftValue": "={{ $json.Email }}",
+              "rightValue": "={{ $('Parse form fields').item.json['Пошта'] }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        192
+      ],
+      "id": "80df55ee-2e7a-4ea1-9a45-dccd92d94a21",
+      "name": "Find lead by e-mail"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        912,
+        192
+      ],
+      "id": "369a3f6d-1a0f-429d-b607-1936ef158fa6",
+      "name": "Merge lead + list"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fc631bab-fa6f-4134-8c0d-5fae7bcaf693",
+              "name": "lead_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "76ca5cba-9bfd-4995-865e-f364cea752d7",
+              "name": "lead_status",
+              "value": "={{ $('Selected list').first().json.id_status }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1472,
+        192
+      ],
+      "id": "3cb7ec7e-ba17-4b08-a92b-8722654c17eb",
+      "name": "Lead + status"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.lead_status }}",
+                    "rightValue": "=YOUR_KLAVIYO_LIST_ID_HOT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "777d848d-d1c0-475b-b2b4-aef0c9cc2cc6"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "hot"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d332d963-5f2e-4be0-83a3-fdad6c5ba1ed",
+                    "leftValue": "={{ $json.lead_status }}",
+                    "rightValue": "cold",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cold"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b814109d-181a-4da6-b4a6-45ba52aa791f",
+                    "leftValue": "={{ $json.lead_status }}",
+                    "rightValue": "warm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "warm"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1712,
+        176
+      ],
+      "id": "dc16c0f4-39c2-40bf-991c-6d2a0b410414",
+      "name": "Route status to CRM"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "46d7e796-0375-48ac-aa32-3ee94a3976be",
+              "name": "lead_status",
+              "value": "YOUR_KLAVIYO_LIST_ID_HOT",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1936,
+        -96
+      ],
+      "id": "07a568a0-ed2b-457c-b998-1bb87b12adde",
+      "name": "Status: hot"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "46d7e796-0375-48ac-aa32-3ee94a3976be",
+              "name": "lead_status",
+              "value": "YOUR_KLAVIYO_LIST_ID_COLD",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1936,
+        96
+      ],
+      "id": "8bfbd777-1dc5-4f95-b0f8-e5dafad12def",
+      "name": "Status: cold"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "46d7e796-0375-48ac-aa32-3ee94a3976be",
+              "name": "lead_status",
+              "value": "YOUR_KLAVIYO_LIST_ID_WARM",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1936,
+        288
+      ],
+      "id": "b83c747d-4197-4d68-b5bf-3617e9bb4bbf",
+      "name": "Status: warm"
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "operation": "update",
+        "leadId": "={{ $('Route status to CRM').first().json.lead_id }}",
+        "updateFields": {
+          "Lead_Status": "Hot"
+        }
+      },
+      "type": "n8n-nodes-base.zohoCrm",
+      "typeVersion": 1,
+      "position": [
+        2144,
+        -96
+      ],
+      "id": "68ada566-530c-4cc7-825f-47ba435787e1",
+      "name": "Zoho: set Hot"
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "operation": "update",
+        "leadId": "={{ $('Route status to CRM').first().json.lead_id }}",
+        "updateFields": {
+          "Lead_Status": "Cold"
+        }
+      },
+      "type": "n8n-nodes-base.zohoCrm",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        96
+      ],
+      "id": "ba02c7e8-a25a-45cf-994c-f319eba9861e",
+      "name": "Zoho: set Cold"
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "operation": "update",
+        "leadId": "={{ $('Route status to CRM').first().json.lead_id }}",
+        "updateFields": {
+          "Lead_Status": "Warm"
+        }
+      },
+      "type": "n8n-nodes-base.zohoCrm",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        288
+      ],
+      "id": "5fd4f8fb-210c-4fc4-92b4-672609d2e394",
+      "name": "Zoho: set Warm"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse form fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI: rate lead": {
+      "main": [
+        [
+          {
+            "node": "Parse AI rating",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI rating": {
+      "main": [
+        [
+          {
+            "node": "Rating valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rating valid?": {
+      "main": [
+        [
+          {
+            "node": "Fallback: warm",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route by rating",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback: warm": {
+      "main": [
+        [
+          {
+            "node": "Route by rating",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by rating": {
+      "main": [
+        [
+          {
+            "node": "Klaviyo list: hot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Klaviyo list: cold",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Klaviyo list: warm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Klaviyo list: cold": {
+      "main": [
+        [
+          {
+            "node": "Selected list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Klaviyo list: hot": {
+      "main": [
+        [
+          {
+            "node": "Selected list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Klaviyo list: warm": {
+      "main": [
+        [
+          {
+            "node": "Selected list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse form fields": {
+      "main": [
+        [
+          {
+            "node": "Zoho: create lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sheets: log lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram: new lead",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI: rate lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Selected list": {
+      "main": [
+        [
+          {
+            "node": "Klaviyo: create profile",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge lead + list",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get profile ID": {
+      "main": [
+        [
+          {
+            "node": "Klaviyo: add to list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI: rate lead",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Klaviyo: create profile": {
+      "main": [
+        [
+          {
+            "node": "Get profile ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zoho: create lead": {
+      "main": [
+        [
+          {
+            "node": "Zoho: get leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zoho: get leads": {
+      "main": [
+        [
+          {
+            "node": "Find lead by e-mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find lead by e-mail": {
+      "main": [
+        [
+          {
+            "node": "Merge lead + list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge lead + list": {
+      "main": [
+        [
+          {
+            "node": "Lead + status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route status to CRM": {
+      "main": [
+        [
+          {
+            "node": "Status: hot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Status: cold",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Status: warm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead + status": {
+      "main": [
+        [
+          {
+            "node": "Route status to CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status: cold": {
+      "main": [
+        [
+          {
+            "node": "Zoho: set Cold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status: hot": {
+      "main": [
+        [
+          {
+            "node": "Zoho: set Hot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zoho: set Hot": {
+      "main": [
+        []
+      ]
+    },
+    "Status: warm": {
+      "main": [
+        [
+          {
+            "node": "Zoho: set Warm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

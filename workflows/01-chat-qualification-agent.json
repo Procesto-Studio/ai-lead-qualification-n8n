@@ -1,0 +1,163 @@
+{
+  "name": "Lead qualification · AI chat agent (BANT) → Zoho CRM",
+  "description": "Website chat agent that qualifies a lead by BANT, scores it 0–100 and creates the lead in Zoho CRM.",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Привіт! 👋 Розкажіть, будь ласка, про свій бізнес — які процеси чи маркетинг хотіли б покращити?",
+        "options": {
+          "subtitle": "Допоможемо підібрати рішення для ваших бізнес процесів",
+          "title": "AI-асистент у Автоматизація бізнесу"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8c3e0f1b-1112-4320-b6fc-8d53618e8976",
+      "name": "Website chat",
+      "webhookId": "3cc13c1a-a67b-4eba-bc13-794784a01c6f"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "[Prompt not published. To get the full workflow, see README → Get the full workflow.]",
+          "enableStreaming": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        320,
+        0
+      ],
+      "id": "444621fd-82da-4a8f-be6c-b37f47e909b2",
+      "name": "AI: qualification agent",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "lead",
+        "Company": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Company', ``, 'string') }}",
+        "lastName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Last_Name', ``, 'string') }}",
+        "additionalFields": {
+          "customFields": {
+            "customFields": [
+              {
+                "fieldId": "score_AI",
+                "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('customFields0_Value', ``, 'string') }}"
+              },
+              {
+                "fieldId": "SCORE_COMMENT",
+                "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('customFields1_Value', ``, 'string') }}"
+              }
+            ]
+          },
+          "Lead_Status": "New",
+          "Phone": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Phone', ``, 'string') }}",
+          "Skype_ID": "={{ $json.sessionId }}",
+          "Website": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Website', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.zohoCrmTool",
+      "typeVersion": 1,
+      "position": [
+        464,
+        368
+      ],
+      "id": "cbc06e0b-99a6-4a43-8e84-c5693dcb2b9b",
+      "name": "Create a lead in Zoho CRM"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        240
+      ],
+      "id": "1cfb86b5-e0e5-4123-9a2b-c4b57acab152",
+      "name": "Postgres Chat Memory"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        272
+      ],
+      "id": "00235d16-0892-4a4b-8373-31ddcc0b0d61",
+      "name": "OpenAI Chat Model"
+    }
+  ],
+  "connections": {
+    "Website chat": {
+      "main": [
+        [
+          {
+            "node": "AI: qualification agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a lead in Zoho CRM": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI: qualification agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI: qualification agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI: qualification agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
