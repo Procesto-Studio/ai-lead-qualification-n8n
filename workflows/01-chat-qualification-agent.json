@@ -103,6 +103,54 @@
       ],
       "id": "00235d16-0892-4a4b-8373-31ddcc0b0d61",
       "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "content": "### Public chat\nn8n chat widget with a greeting. Embed it on your site or open the public URL.",
+        "height": 462,
+        "width": 230,
+        "color": 4
+      },
+      "id": "354692cf-1344-4372-b484-97d8f6ce9a22",
+      "name": "Note: Website chat",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -50,
+        -312
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Qualification agent\nAsks a few questions, checks fit (BANT) and scores the lead. Memory keeps the dialogue per session; the Zoho tool creates the lead with score and comment once the contact details are known.\n\n[Prompt not published in this showcase.]",
+        "height": 830,
+        "width": 344,
+        "color": 4
+      },
+      "id": "9ee80958-b50a-4966-80dd-2a7c771874bd",
+      "name": "Note: AI: qualification agent",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        270,
+        -312
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Website chat: AI qualification agent\n\n### How it works\nA visitor chats on the website. The AI agent asks about the business and the task, checks fit and budget (BANT), scores the lead and, once it has name and contact, **creates the lead in Zoho CRM** with the score and a comment.\n\nDialogue memory is stored in **Postgres**, so the conversation can be reviewed later (workflow 04).\n\n### Setup\n- Connect OpenAI, Postgres and Zoho CRM credentials.\n- Add custom Lead fields `score_AI` and `SCORE_COMMENT` in Zoho.\n- Embed the public chat URL on your site.\n\n[Prompt not published in this showcase.]",
+        "height": 579,
+        "width": 520,
+        "color": 1
+      },
+      "id": "a3ef0772-0116-46b6-96c1-c40a13edb0bd",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -610,
+        -312
+      ]
     }
   ],
   "connections": {

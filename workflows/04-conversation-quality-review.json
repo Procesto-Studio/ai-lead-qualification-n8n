@@ -39,7 +39,7 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        448,
+        458,
         256
       ],
       "id": "d79adb54-4799-463a-9380-8abf8b9efeb8",
@@ -73,7 +73,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        672,
+        682,
         0
       ],
       "id": "084407d3-9652-46d0-a128-a8d627cc5f90",
@@ -88,7 +88,7 @@
       "type": "@n8n/n8n-nodes-langchain.memoryManager",
       "typeVersion": 1.1,
       "position": [
-        896,
+        906,
         0
       ],
       "id": "1e6a5eb8-43f4-4af6-abb1-57a6a2eea107",
@@ -102,7 +102,7 @@
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        896,
+        906,
         208
       ],
       "id": "db1e695c-050b-4284-a026-c453c4ddf91a",
@@ -119,7 +119,7 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1472,
+        1482,
         128
       ],
       "id": "36d9e9eb-aaa3-4beb-9084-17ee2fb3dd35",
@@ -233,7 +233,7 @@
       "type": "n8n-nodes-base.googleSheetsTool",
       "typeVersion": 4.7,
       "position": [
-        1616,
+        1626,
         352
       ],
       "id": "51cea8b8-228a-418f-81ef-6be0d923b16a",
@@ -252,7 +252,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        1488,
+        1498,
         480
       ],
       "id": "6ab7fb4e-7c61-484e-b44b-7cb29613872b",
@@ -282,7 +282,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        1248,
+        1258,
         0
       ],
       "id": "6abd7a12-9041-43b8-a1d7-6cc4f0109663",
@@ -300,11 +300,91 @@
       "type": "n8n-nodes-base.zohoCrm",
       "typeVersion": 1,
       "position": [
-        224,
+        234,
         256
       ],
       "id": "808036f7-b8c9-4168-8db6-24e9a3e356a3",
       "name": "Zoho: get leads"
+    },
+    {
+      "parameters": {
+        "content": "### Daily 9:00\nOr run it manually.",
+        "height": 720,
+        "width": 230,
+        "color": 4
+      },
+      "id": "270582bc-d421-4641-a718-a4fd7cb45ea2",
+      "name": "Note: Schedule Trigger",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -66,
+        -170
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### One lead at a time\nAll leads, newest first, processed in a loop.",
+        "height": 576,
+        "width": 424,
+        "color": 4
+      },
+      "id": "d4f86df8-ccb6-4baa-8d17-e7eb8ace8441",
+      "name": "Note: Zoho: get leads",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        184,
+        -170
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Load the dialogue\nSkips leads without a chat. Loads the full conversation from the agent's memory and adds lead ID and name.",
+        "height": 528,
+        "width": 776,
+        "color": 4
+      },
+      "id": "a45248e1-91dd-4eef-92bd-64ff41ff1ff1",
+      "name": "Note: Has chat session?",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        632,
+        -170
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### AI review\nScores the conversation, lists errors and recommendations, and writes one row per lead with the Sheets tool.\n\n[Prompt not published in this showcase.]",
+        "height": 800,
+        "width": 344,
+        "color": 4
+      },
+      "id": "5c8a77a5-9a17-46dd-88d9-e5ed15b20738",
+      "name": "Note: AI: review dialogue",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1432,
+        -170
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Daily review of chat conversations\n\n### How it works\nEvery day at 9:00:\n1. Leads are read from **Zoho CRM** and processed one by one.\n2. Leads with a chat session get their dialogue loaded from **Postgres** memory.\n3. The **AI reviewer** scores the conversation and saves errors and recommendations to **Google Sheets**.\n\nThe weekly report (workflow 03) uses these reviews.\n\n### Setup\n- Connect Zoho CRM, Postgres (the same memory as workflow 01), OpenAI and Google Sheets.\n- The chat session ID is stored on the lead (field used in **Has chat session?**).\n- Set the review sheet ID in **Sheets: save review**.\n\n[Prompt not published in this showcase.]",
+        "height": 675,
+        "width": 520,
+        "color": 1
+      },
+      "id": "2c33dd19-f079-4c2a-8576-b123c0498eb7",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -626,
+        -170
+      ]
     }
   ],
   "connections": {
